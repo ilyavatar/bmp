@@ -25,11 +25,11 @@
 <div class="headers justify-content-between row">
     <div class="headers__block align-items-center">
         <img class="headers__block_img" src="img/download.svg" alt="Загрузить изображение из файла">
-        <span class="headers__block_text">Загрузить изображение из файла</span>
+        <span id="option_1" class="headers__block_text">Загрузить изображение из файла</span>
     </div>
     <div class="headers__block align-items-center">
         <img class="headers__block_img" src="img/save.svg" alt="Сохранить изображение в файл">
-        <span class="headers__block_text">Сохранить изображение в файл</span>
+        <span id="option_2" class="headers__block_text">Сохранить изображение в файл</span>
     </div>
 </div>
 
@@ -65,4 +65,18 @@
     </div>
 </div>
 </body>
+<script>
+    async function class_func(cls) {
+        await eel.cls_func(cls)
+    }
+
+    option_1.addEventListener('click', function() {
+        class_func('Загрузить изображение из файла');
+    })
+
+    option_2.addEventListener('click', function() {
+        class_func('Сохранить изображение в файл');
+    })
+</script>
+
 </html>
