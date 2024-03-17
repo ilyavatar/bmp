@@ -38,11 +38,10 @@ def saveImage(wildcard="*"):
     return path
 
 # @eel.expose
-# def encrypt(wildcard="*"):
-
+# def encrypt(text, bit):
 
 # @eel.expose
-# def encrypt(wildcard="*"):
+# def encrypt(text, bit):
 
 
 # Set web files folder

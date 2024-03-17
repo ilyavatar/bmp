@@ -41,7 +41,7 @@
         </div>
 
         <form>
-            <textarea class="w-100" type="text" placeholder="Введите сообщение"></textarea>
+            <textarea class="w-100" type="text" id="text_before_execution" placeholder="Введите сообщение"></textarea>
         </form>
     </div>
     <div class="content__center_block d-flex flex-column align-items-center justify-content-end col-4">
@@ -92,13 +92,31 @@
     }
 
     function encrypt() {
-        // eel.encrypt();
+        let res = precrypt();
+        if (res == null) return;
+        // eel.encrypt(res[0], res[1]);
         setImage("encrypt.bmp", "encrypt.bmp", "save")
     }
 
     function decrypt() {
-        // eel.decrypt();
+        let res = precrypt();
+        if (res == null) return;
+        // eel.decrypt(res[0], res[1]);
         setImage("decrypt.bmp", "decrypt.bmp", "save")
+    }
+
+    function precrypt() {
+        let text = document.getElementById("text_before_execution").value;
+        let bit = document.getElementById("bit").value;
+        if (text === "") {
+            alert("Не введен текст для шифровки");
+            return null;
+        } else if (bit === "") {
+            alert("Не введено количество бит");
+            return null;
+        }
+
+        return [text, bit];
     }
 </script>
 
