@@ -23,21 +23,21 @@
 
 <body class="container">
 <div class="headers justify-content-between row">
-    <div class="headers__block align-items-center">
+    <button onclick="getPathToFile()" class="headers__block align-items-center">
         <img class="headers__block_img" src="img/download.svg" alt="Загрузить изображение из файла">
         <span id="option_1" class="headers__block_text">Загрузить изображение из файла</span>
-    </div>
-    <div class="headers__block align-items-center">
+    </button>
+    <button onclick="setPathToFile()" class="headers__block align-items-center">
         <img class="headers__block_img" src="img/save.svg" alt="Сохранить изображение в файл">
         <span id="option_2" class="headers__block_text">Сохранить изображение в файл</span>
-    </div>
+    </button>
 </div>
 
 <div class="content d-flex justify-content-between">
     <div class="content__block col-4">
         <div class="content__block_img d-flex flex-column">
-            <img class="img-fluid" src="img/image.png">
-            <span class="content__block_filename">image.bpm</span>
+            <img class="img-fluid" id="download_image_url" src="img/image.png">
+            <span class="content__block_filename" id="download_image_name">image.bpm</span>
         </div>
 
         <form>
@@ -45,8 +45,8 @@
         </form>
     </div>
     <div class="content__center_block d-flex flex-column align-items-center justify-content-end col-4">
-        <button>Зашифровать</button>
-        <button class="content__center_block_second_button">Расшифровать</button>
+        <button onclick="encrypt()">Зашифровать</button>
+        <button onclick="decrypt()" class="content__center_block_second_button">Расшифровать</button>
 
         <form>
             <label for="bit">Сколько бит заменять?</label>
@@ -55,8 +55,8 @@
     </div>
     <div class="content__block col-4">
         <div class="content__block_img d-flex flex-column">
-            <img class="img-fluid" src="img/image.png">
-            <span class="content__block_filename">image.bpm</span>
+            <img class="img-fluid" id="save_image_url" src="img/image.png">
+            <span class="content__block_filename" id="save_image_name">image.bpm</span>
         </div>
 
         <form>
@@ -66,17 +66,40 @@
 </div>
 </body>
 <script>
-    async function class_func(cls) {
-        await eel.cls_func(cls)
+    // async function class_func(cls) {
+    //     await eel.cls_func(cls)
+    // }
+    //
+    // option_1.addEventListener('click', function() {
+    //     class_func('Загрузить изображение из файла');
+    // })
+    //
+    // option_2.addEventListener('click', function() {
+    //     class_func('Сохранить изображение в файл');
+    // })
+
+    function getPathToFile() {
+        eel.downloadImage()(r => setImage(r[0], r[1], "download"));
     }
 
-    option_1.addEventListener('click', function() {
-        class_func('Загрузить изображение из файла');
-    })
+    function setImage(name, src, operation) {
+        document.getElementById(operation + "_image_name").innerText=name
+        document.getElementById(operation + "_image_url").src="tmp/" + src
+    }
 
-    option_2.addEventListener('click', function() {
-        class_func('Сохранить изображение в файл');
-    })
+    function setPathToFile() {
+        eel.saveImage();
+    }
+
+    function encrypt() {
+        // eel.encrypt();
+        setImage("encrypt.bmp", "encrypt.bmp", "save")
+    }
+
+    function decrypt() {
+        // eel.decrypt();
+        setImage("decrypt.bmp", "decrypt.bmp", "save")
+    }
 </script>
 
 </html>
