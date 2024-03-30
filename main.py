@@ -1,14 +1,9 @@
 import shutil
 import eel
 import wx
-
-# @eel.expose
-# def cls_func(cls):
-#     if (cls.startswith('Загрузить')):
-#         print('ЗагрузОчка')
-#     elif (cls.startswith('Сохранить')):
-#         with open('output.txt', 'w') as file:
-#             file.write('Сохранил какие-то данные')
+import os
+import platform
+import getpass
 
 @eel.expose
 def downloadImage(wildcard="*"):
@@ -27,31 +22,41 @@ def downloadImage(wildcard="*"):
 
 @eel.expose
 def saveImage(wildcard="*"):
-    app = wx.App(None)
-    style = wx.FD_OPEN | wx.FD_FILE_MUST_EXIST
-    dialog = wx.FileDialog(None, 'Open', wildcard=wildcard, style=style)
-    if dialog.ShowModal() == wx.ID_OK:
-        path = dialog.GetPath()
-    else:
-        path = None
-    dialog.Destroy()
-    return path
+    system = platform.system()
+    userName = getpass.getuser()
+    print(system)
+    path = "~"
+    if system == "Darwin":
+        path = os.path.expanduser("~/Downloads")
+    elif system == "Windows":
+        path = os.path.expanduser(r"C:/Users/" + userName + r"/Downloads")
+    elif system == "Linux":
+        path = os.path.expanduser("/home/" + userName + "/Загрузки")
 
-# @eel.expose
-# def encrypt(text, bit):
+    shutil.copyfile("web/tmp/result.bmp", path + "/result.bmp")
 
-# @eel.expose
-# def encrypt(text, bit):
 
+@eel.expose
+def encrypt(text, bit):
+#     Алгоритм кодирования
+    filePath = "web/tmp/input.bmp"
+    # with open(filePath, 'w') as f:
+    #     print(f)
+    #
+    # f.close()
+    shutil.copyfile("web/tmp/input.bmp", "web/tmp/result.bmp")
+
+@eel.expose
+def decrypt(text, bit):
+    #     Алгоритм декодирования
+    # filePath = "web/tmp/input.bmp"
+    # with open(filePath, 'w') as f:
+    #     print(f)
+    #
+    # f.close()
+    shutil.copyfile("web/tmp/input.bmp", "web/tmp/result.bmp")
 
 # Set web files folder
 eel.init('web')
-
-# @eel.expose                         # Expose this function to Javascript
-# def say_hello_py(x):
-#     print('Hello from %s' % x)
-#
-# say_hello_py('Python World!')
-# eel.say_hello_js('Python World!')   # Call a Javascript function
 
 eel.start('main_page.html', mode="chrome")  # Start
