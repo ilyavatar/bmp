@@ -1,4 +1,5 @@
 import os
+import shutil
 import tkinter as tk
 from tkinter import filedialog
 
@@ -6,6 +7,7 @@ from PIL import Image, ImageTk
 
 WAV_HEADER_SIZE = 44
 degree = 8
+
 
 def text_to_binary(event):
     return [int(format(ord(elem), 'b')) for elem in event]
@@ -15,47 +17,60 @@ def binary_to_text(event):
     return [chr(int(str(elem), 2)) for elem in event]
 
 
-class Centre(tk.Frame):
+def configure_ok_button(event):
+    count_bit = center.entry.get()
+    decode_text = left_side.text.get(1.0, "end-1c").replace(' ', '')
+    state_encode = "disabled"
+    state_decode = "disabled"
+    if count_bit == '1' or count_bit == '2' or count_bit == '4' or count_bit == '8':
+        state_decode = "active"
+        if decode_text != '':
+            state_encode = "active"
+
+    center.encode.configure(state=state_encode)
+    center.decode.configure(state=state_decode)
+
+
+class Center(tk.Frame):
     def __init__(self, master=None):
         tk.Frame.__init__(self, master, relief='raised')
 
         self.encode = tk.Button(self, text='Зашифровать',
-                              foreground='blue',
-                              activebackground='white',
-                              command=self.click_button
-                              )
+                                foreground='blue',
+                                activebackground='white',
+                                command=self.encode,
+                                state="disabled"
+                                )
         self.encode.pack()
 
         self.decode = tk.Button(self, text='Расшифровать',
-                              foreground='blue',
-                              activebackground='white',
-                              command=self.decode_wav
-                              )
+                                foreground='blue',
+                                activebackground='white',
+                                command=self.decode,
+                                state="disabled"
+                                )
         self.decode.pack()
 
-    def decode_wav(self):
-        """
-        This function takes symbols_to_read bytes from encoded WAV audio file and
-        retrieves hidden information from them with a given degree.
-        Single portion of data can be written only in 2 bytes by one so maximum
-        information portion size is 16 bits.
-        Thus text size should be less than (data_size * degree / 16)
+        self.name = tk.Label(self, text="Сколько бит заменять?")
+        self.name.pack(fill='x')
 
-        :param input_wav_name: name of WAV input audio file
-        :param symbols_to_read:
-        :return: True if function succeeds else False
-        """
+        self.entry = tk.Entry(self, foreground="#8B8B8B")
+        self.entry.bind("<KeyRelease>", configure_ok_button)
+        self.entry.placeholder = "Введите количество бит"
+        # self.entry.insert(0, self.entry.placeholder)
+        self.entry.pack(fill='x')
 
+    def decode(self):
         symbols_to_read = 10
 
-        input_wav = open('test.bmp', 'rb')
+        input_file = open('input.bmp', 'rb')
 
-        wav_header = input_wav.read(WAV_HEADER_SIZE)
+        wav_header = input_file.read(WAV_HEADER_SIZE)
         data_size = int.from_bytes(wav_header[40:44], byteorder='little')
 
         if symbols_to_read >= data_size * degree / 16:
             print("Too many symbols to read")
-            input_wav.close()
+            input_file.close()
             return False
 
         text = ''
@@ -63,7 +78,7 @@ class Centre(tk.Frame):
         _, sample_mask = self.create_masks(degree)
         sample_mask = ~sample_mask
 
-        data = input_wav.read(data_size)
+        data = input_file.read(data_size)
 
         read = 0
         while read < symbols_to_read:
@@ -95,17 +110,14 @@ class Centre(tk.Frame):
                 if chr(second_symbol) == '\n' and len(os.linesep) == 2:
                     read += 1
 
-        input_wav.close()
+        input_file.close()
+        right_side.text.configure(state="normal")
+        right_side.text.insert("1.0", text)
+        right_side.text.configure(state="disabled")
         print(text)
         return True, text
-    def create_masks(self, degree):
-        """
-        Create masks for taking bits from text bytes and
-        putting them to image bytes.
 
-        :param degree: number of bits from byte that are taken to encode text data in audio
-        :return:  mask for a text and a mask for a sample
-        """
+    def create_masks(self, degree):
         text_mask = 0b1111111111111111
         sample_mask = 0b1111111111111111
 
@@ -116,26 +128,25 @@ class Centre(tk.Frame):
 
         return text_mask, sample_mask
 
-    def click_button(self):
-
-        text_file = 'abcfghmkwf'
-        input_wav = open(left_side.image_path, 'rb')
+    def encode(self):
+        text_file = left_side.text.get(1.0, "end-1c")
+        input_file = open(left_side.image_path, 'rb')
 
         text_len = len(text_file) - 1
 
-        wav_header = input_wav.read(WAV_HEADER_SIZE)
+        wav_header = input_file.read(WAV_HEADER_SIZE)
         data_size = int.from_bytes(wav_header[40:44], byteorder='little')
         print(data_size)
         if text_len > data_size * degree / 16.0:
             print("Too big text to encode")
-            input_wav.close()
+            input_file.close()
             return False
 
         text = text_file
-        output_wav = open('test.bmp', 'wb')
+        output_wav = open('input.bmp', 'wb')
         output_wav.write(wav_header)
 
-        data = input_wav.read(data_size)
+        data = input_file.read(data_size)
         text_mask, sample_mask = self.create_masks(degree)
         i = 0
         while True:
@@ -165,16 +176,22 @@ class Centre(tk.Frame):
                 i += 1
 
         output_wav.write(data)
-        output_wav.write(input_wav.read())
+        output_wav.write(input_file.read())
 
-        input_wav.close()
+        input_file.close()
         output_wav.close()
+
+        right_side.image_path = "input.bmp"
+        right_side.name["text"] = right_side.image_path
+        right_side.find_image(right_side.image_path)
+        right_side.c_image = right_side.canvas.create_image(0, 0, anchor='nw', image=right_side.photo)
+        right_side.canvas.pack(before=right_side.name)
 
         return True
 
 
 class OneSide(tk.Frame):
-    def __init__(self, master=None, button_text='', image_path=''):
+    def __init__(self, master=None, button_text='', image_path='', entry_placeholder='', state_text_field='normal'):
         tk.Frame.__init__(self, master, relief='raised')
         self.image = None
         self.photo = None
@@ -194,32 +211,46 @@ class OneSide(tk.Frame):
         self.c_image = self.canvas.create_image(0, 0, anchor='nw', image=self.photo)
         self.canvas.pack()
 
-        self.name = tk.Entry(self)
-        self.name.insert(0, self.image_path)
-        self.name.config(state='disabled')
+        self.name = tk.Label(self, text=self.image_path)
         self.name.pack(fill='x')
 
-        self.text = tk.Text(self)
+        self.placeholder = tk.Label(self, text=entry_placeholder, anchor="w")
+        self.placeholder.pack(fill='x')
+
+        self.text = tk.Text(self, width=50, state=state_text_field)
+        self.text.bind("<KeyRelease>", configure_ok_button)
         self.text.pack(after=self.canvas, side='bottom', fill='x')
 
     def find_image(self, image_path):
         self.image = Image.open(image_path)
-        self.photo = ImageTk.PhotoImage(self.image)
+        scalled = self.image.resize((320, 250))
+        self.photo = ImageTk.PhotoImage(scalled)
 
     def click_button(self):
-        if self.button_text == 'Load':
+        if self.button_text == 'Загрузить изображение из файла':
             self.image_path = filedialog.askopenfilename()
             if self.image_path != "":
-                self.name.insert(0, self.image_path)
+                self.name["text"] = self.image_path
                 self.find_image(self.image_path)
                 self.c_image = self.canvas.create_image(0, 0, anchor='nw', image=self.photo)
+                self.canvas.pack()
+                shutil.copyfile(self.image_path, "input.bmp")
+        elif self.button_text == "Сохранить изображение в файл":
+            save_image_path = filedialog.asksaveasfilename()
+            if save_image_path is None:
+                return
+
+            img = Image.open("input.bmp")
+            # img = open("input.bmp", 'rb').read()
+            with open(str(save_image_path), 'w') as f:
+                f.write(str(img))
 
 
 root = tk.Tk()
-left_side = OneSide(root, 'Load', 'web/tmp/input.bmp')
-centre = Centre(root)
-right_side = OneSide(root, 'Save', 'web/tmp/sample_1280×853.bmp')
+left_side = OneSide(root, 'Загрузить изображение из файла', 'web/tmp/input.bmp', "Введите сообщение для кодирования")
+center = Center(root)
+right_side = OneSide(root, 'Сохранить изображение в файл', 'web/tmp/sample_1280×853.bmp', 'Раскодированное сообщение', 'disabled')
 left_side.pack(side='left', padx=10)
-centre.pack(side='left', padx=10)
+center.pack(side='left', padx=20)
 right_side.pack(side='left', padx=10)
 root.mainloop()
