@@ -6,8 +6,8 @@ from tkinter import filedialog
 from PIL import Image, ImageTk
 
 WAV_HEADER_SIZE = 44
-degree = 8
-
+# degree = 8
+decode_text_len = 0
 
 def text_to_binary(event):
     return [int(format(ord(elem), 'b')) for elem in event]
@@ -61,7 +61,8 @@ class Center(tk.Frame):
         self.entry.pack(fill='x')
 
     def decode(self):
-        symbols_to_read = 10
+        degree = int(center.entry.get())
+        symbols_to_read = decode_text_len
 
         input_file = open('input.bmp', 'rb')
 
@@ -129,6 +130,7 @@ class Center(tk.Frame):
         return text_mask, sample_mask
 
     def encode(self):
+        degree = int(center.entry.get())
         text_file = left_side.text.get(1.0, "end-1c")
         input_file = open(left_side.image_path, 'rb')
 
@@ -186,6 +188,9 @@ class Center(tk.Frame):
         right_side.find_image(right_side.image_path)
         right_side.c_image = right_side.canvas.create_image(0, 0, anchor='nw', image=right_side.photo)
         right_side.canvas.pack(before=right_side.name)
+
+        global decode_text_len
+        decode_text_len = text_len
 
         return True
 
