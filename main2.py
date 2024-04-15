@@ -145,14 +145,14 @@ class Center(tk.Frame):
             return False
 
         text = text_file
-        output_wav = open('input.bmp', 'wb')
+        output_wav = open('output.bmp', 'wb')
         output_wav.write(wav_header)
 
         data = input_file.read(data_size)
         text_mask, sample_mask = self.create_masks(degree)
         i = 0
         while True:
-            if i == len(text):
+            if i >= len(text):
                 break
 
             txt_symbol = text[i]
@@ -183,7 +183,7 @@ class Center(tk.Frame):
         input_file.close()
         output_wav.close()
 
-        right_side.image_path = "input.bmp"
+        right_side.image_path = "output.bmp"
         right_side.name["text"] = right_side.image_path
         right_side.find_image(right_side.image_path)
         right_side.c_image = right_side.canvas.create_image(0, 0, anchor='nw', image=right_side.photo)
@@ -227,9 +227,12 @@ class OneSide(tk.Frame):
         self.text.pack(after=self.canvas, side='bottom', fill='x')
 
     def find_image(self, image_path):
-        self.image = Image.open(image_path)
-        scalled = self.image.resize((320, 250))
-        self.photo = ImageTk.PhotoImage(scalled)
+        try:
+            self.image = Image.open(image_path)
+            scalled = self.image.resize((320, 250))
+            self.photo = ImageTk.PhotoImage(scalled)
+        except AttributeError as ignore:
+            pass
 
     def click_button(self):
         if self.button_text == 'Загрузить изображение из файла':
@@ -241,20 +244,17 @@ class OneSide(tk.Frame):
                 self.canvas.pack()
                 shutil.copyfile(self.image_path, "input.bmp")
         elif self.button_text == "Сохранить изображение в файл":
-            save_image_path = filedialog.asksaveasfilename()
+            save_image_path = filedialog.asksaveasfilename(defaultextension='bmp')
             if save_image_path is None:
                 return
-
-            img = Image.open("input.bmp")
-            # img = open("input.bmp", 'rb').read()
-            with open(str(save_image_path), 'w') as f:
-                f.write(str(img))
+            shutil.copyfile("output.bmp", save_image_path)
+            right_side.text.insert("1.0", save_image_path)
 
 
 root = tk.Tk()
-left_side = OneSide(root, 'Загрузить изображение из файла', 'web/tmp/input.bmp', "Введите сообщение для кодирования")
+left_side = OneSide(root, 'Загрузить изображение из файла', '', "Введите сообщение для кодирования")
 center = Center(root)
-right_side = OneSide(root, 'Сохранить изображение в файл', 'web/tmp/sample_1280×853.bmp', 'Раскодированное сообщение', 'disabled')
+right_side = OneSide(root, 'Сохранить изображение в файл', '', 'Раскодированное сообщение', 'disabled')
 left_side.pack(side='left', padx=10)
 center.pack(side='left', padx=20)
 right_side.pack(side='left', padx=10)
