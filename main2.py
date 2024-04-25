@@ -6,7 +6,7 @@ from tkinter import filedialog
 from PIL import Image, ImageTk
 
 WAV_HEADER_SIZE = 44
-# degree = 8
+degree = 8
 decode_text_len = 0
 
 def text_to_binary(event):
@@ -18,17 +18,12 @@ def binary_to_text(event):
 
 
 def configure_ok_button(event):
-    count_bit = center.entry.get()
     decode_text = left_side.text.get(1.0, "end-1c").replace(' ', '')
     state_encode = "disabled"
-    state_decode = "disabled"
-    if count_bit == '1' or count_bit == '2' or count_bit == '4' or count_bit == '8':
-        state_decode = "active"
-        if decode_text != '':
-            state_encode = "active"
+    if decode_text != '':
+        state_encode = "active"
 
     center.encode.configure(state=state_encode)
-    center.decode.configure(state=state_decode)
 
 
 class Center(tk.Frame):
@@ -51,18 +46,11 @@ class Center(tk.Frame):
                                 )
         self.decode.pack()
 
-        self.name = tk.Label(self, text="Сколько бит заменять?")
-        self.name.pack(fill='x')
-
-        self.entry = tk.Entry(self, foreground="#8B8B8B")
-        self.entry.bind("<KeyRelease>", configure_ok_button)
-        self.entry.placeholder = "Введите количество бит"
-        # self.entry.insert(0, self.entry.placeholder)
-        self.entry.pack(fill='x')
-
     def decode(self):
-        degree = int(center.entry.get())
-        symbols_to_read = decode_text_len
+        right_side.text.configure(state="normal")
+        right_side.text.delete("1.0", "end-1c")
+        right_side.text.configure(state="disabled")
+        symbols_to_read = decode_text_len + 1
 
         input_file = open('input.bmp', 'rb')
 
@@ -130,7 +118,6 @@ class Center(tk.Frame):
         return text_mask, sample_mask
 
     def encode(self):
-        degree = int(center.entry.get())
         text_file = left_side.text.get(1.0, "end-1c")
         input_file = open(left_side.image_path, 'rb')
 
@@ -243,6 +230,7 @@ class OneSide(tk.Frame):
                 self.c_image = self.canvas.create_image(0, 0, anchor='nw', image=self.photo)
                 self.canvas.pack()
                 shutil.copyfile(self.image_path, "input.bmp")
+                center.decode.configure(state="active")
         elif self.button_text == "Сохранить изображение в файл":
             save_image_path = filedialog.asksaveasfilename(defaultextension='bmp')
             if save_image_path is None:
