@@ -103,7 +103,6 @@ class Center(tk.Frame):
         right_side.text.configure(state="normal")
         right_side.text.insert("1.0", text)
         right_side.text.configure(state="disabled")
-        print(text)
         return True, text
 
     def create_masks(self, degree):
@@ -125,7 +124,6 @@ class Center(tk.Frame):
 
         wav_header = input_file.read(WAV_HEADER_SIZE)
         data_size = int.from_bytes(wav_header[40:44], byteorder='little')
-        print(data_size)
         if text_len > data_size * degree / 16.0:
             print("Too big text to encode")
             input_file.close()
