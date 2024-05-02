@@ -1,20 +1,14 @@
 import os
 import shutil
+import sys
 import tkinter as tk
 from tkinter import filedialog
 
 from PIL import Image, ImageTk
 
-WAV_HEADER_SIZE = 44
+HEADER_SIZE = 44
 degree = 8
 decode_text_len = 0
-
-def text_to_binary(event):
-    return [int(format(ord(elem), 'b')) for elem in event]
-
-
-def binary_to_text(event):
-    return [chr(int(str(elem), 2)) for elem in event]
 
 
 def configure_ok_button(event):
@@ -46,127 +40,48 @@ class Center(tk.Frame):
                                 )
         self.decode.pack()
 
-    def decode(self):
-        right_side.text.configure(state="normal")
-        right_side.text.delete("1.0", "end-1c")
-        right_side.text.configure(state="disabled")
-        symbols_to_read = decode_text_len + 1
-
-        input_file = open('input.bmp', 'rb')
-
-        wav_header = input_file.read(WAV_HEADER_SIZE)
-        data_size = int.from_bytes(wav_header[40:44], byteorder='little')
-
-        if symbols_to_read >= data_size * degree / 16:
-            print("Too many symbols to read")
-            input_file.close()
-            return False
-
-        text = ''
-
-        _, sample_mask = self.create_masks(degree)
-        sample_mask = ~sample_mask
-
-        data = input_file.read(data_size)
-
-        read = 0
-        while read < symbols_to_read:
-            two_symbols = 0
-            for step in range(0, 16, degree):
-                sample = int.from_bytes(data[:2], byteorder='little') & sample_mask
-                data = data[2:]
-
-                two_symbols <<= degree
-                two_symbols |= sample
-            first_symbol = two_symbols >> 8
-
-            if first_symbol > 15 and first_symbol < 80 and first_symbol != 32:
-                first_symbol += 1024
-            text += (chr(first_symbol))
-            read += 1
-
-            if chr(first_symbol) == '\n' and len(os.linesep) == 2:
-                read += 1
-
-            if symbols_to_read - read > 0:
-                second_symbol = two_symbols & 0b0000000011111111
-
-                if second_symbol > 15 and second_symbol < 80 and second_symbol != 32:
-                    second_symbol += 1024
-                text += (chr(second_symbol))
-                read += 1
-
-                if chr(second_symbol) == '\n' and len(os.linesep) == 2:
-                    read += 1
-
-        input_file.close()
-        right_side.text.configure(state="normal")
-        right_side.text.insert("1.0", text)
-        right_side.text.configure(state="disabled")
-        return True, text
-
-    def create_masks(self, degree):
-        text_mask = 0b1111111111111111
-        sample_mask = 0b1111111111111111
-
-        text_mask <<= (16 - degree)
-        text_mask %= 65536
-        sample_mask >>= degree
-        sample_mask <<= degree
-
-        return text_mask, sample_mask
 
     def encode(self):
-        text_file = left_side.text.get(1.0, "end-1c")
-        input_file = open(left_side.image_path, 'rb')
+        text_to_encode = left_side.text.get(1.0, "end-1c")
+        input_file = open("input.bmp", 'rb')
 
-        text_len = len(text_file) - 1
+        text_len = len(text_to_encode) - 1
 
-        wav_header = input_file.read(WAV_HEADER_SIZE)
-        data_size = int.from_bytes(wav_header[40:44], byteorder='little')
-        if text_len > data_size * degree / 16.0:
+        header = input_file.read(HEADER_SIZE)
+        data_size = os.stat("input.bmp").st_size
+        if text_len > data_size * degree / 8.0 - HEADER_SIZE:
             print("Too big text to encode")
             input_file.close()
             return False
 
-        text = text_file
-        output_wav = open('output.bmp', 'wb')
-        output_wav.write(wav_header)
+        text = text_to_encode
+        output_file = open('output.bmp', 'wb')
+        output_file.write(header)
 
-        data = input_file.read(data_size)
         text_mask, sample_mask = self.create_masks(degree)
+
         i = 0
         while True:
             if i >= len(text):
                 break
 
             txt_symbol = text[i]
-
             txt_symbol = ord(txt_symbol)
 
-            txt_symbol <<= 8
-
-            for step in range(0, 16, degree):
-                if step == 8 and not txt_symbol:
-                    break
-
-                sample = int.from_bytes(data[:2], byteorder='little') & sample_mask
-                data = data[2:]
-
+            for step in range(0, 8, degree):
+                sample = int.from_bytes(input_file.read(1), sys.byteorder) & sample_mask
                 bits = txt_symbol & text_mask
-                bits >>= (16 - degree)
-
+                bits >>= (8 - degree)
                 sample |= bits
 
-                output_wav.write(sample.to_bytes(2, byteorder='little'))
-                txt_symbol = (txt_symbol << degree) % 65536
+                output_file.write(sample.to_bytes(1, sys.byteorder))
+                txt_symbol = txt_symbol << degree
                 i += 1
 
-        output_wav.write(data)
-        output_wav.write(input_file.read())
+        output_file.write(input_file.read())
 
         input_file.close()
-        output_wav.close()
+        output_file.close()
 
         right_side.image_path = "output.bmp"
         right_side.name["text"] = right_side.image_path
@@ -178,6 +93,60 @@ class Center(tk.Frame):
         decode_text_len = text_len
 
         return True
+
+
+    def decode(self):
+        right_side.text.configure(state="normal")
+        right_side.text.delete("1.0", "end-1c")
+        right_side.text.configure(state="disabled")
+        symbols_to_read = decode_text_len + 1
+
+        input_file = open('input.bmp', 'rb')
+
+        data_size = os.stat('input.bmp').st_size
+        if symbols_to_read >= data_size * degree / 8 - HEADER_SIZE:
+            print("Too many symbols to read")
+            input_file.close()
+            return False
+
+        text = ''
+        input_file.seek(HEADER_SIZE)
+
+        _, sample_mask = self.create_masks(degree)
+        sample_mask = ~sample_mask
+
+        # data = input_file.read(data_size)
+
+        read = 0
+        while read < symbols_to_read:
+            symbol = 0
+            for step in range(0, 8, degree):
+                sample = int.from_bytes(input_file.read(1), sys.byteorder) & sample_mask
+                symbol <<= degree
+                symbol |= sample
+
+            if chr(symbol) == '\n' and len(os.linesep) == 2:
+                read += 1
+
+            read += 1
+            text += (chr(symbol))
+
+        input_file.close()
+        right_side.text.configure(state="normal")
+        right_side.text.insert("1.0", text)
+        right_side.text.configure(state="disabled")
+        return True, text
+
+    def create_masks(self, degree):
+        text_mask = 0b11111111
+        img_mask = 0b11111111
+
+        text_mask <<= (8 - degree)
+        text_mask %= 256
+        img_mask >>= degree
+        img_mask <<= degree
+
+        return text_mask, img_mask
 
 
 class OneSide(tk.Frame):
