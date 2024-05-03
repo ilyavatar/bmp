@@ -42,10 +42,10 @@ class Center(tk.Frame):
 
 
     def encode(self):
-        text_to_encode = left_side.text.get(1.0, "end-1c")
+        text = left_side.text.get(1.0, "end-1c")
         input_file = open("input.bmp", 'rb')
 
-        text_len = len(text_to_encode) - 1
+        text_len = len(text) - 1
 
         header = input_file.read(HEADER_SIZE)
         data_size = os.stat("input.bmp").st_size
@@ -54,11 +54,10 @@ class Center(tk.Frame):
             input_file.close()
             return False
 
-        text = text_to_encode
         output_file = open('output.bmp', 'wb')
         output_file.write(header)
 
-        text_mask, sample_mask = self.create_masks(degree)
+        text_mask, file_mask = self.create_masks(degree)
 
         i = 0
         while True:
@@ -69,7 +68,7 @@ class Center(tk.Frame):
             txt_symbol = ord(txt_symbol)
 
             for step in range(0, 8, degree):
-                sample = int.from_bytes(input_file.read(1), sys.byteorder) & sample_mask
+                sample = int.from_bytes(input_file.read(1), sys.byteorder) & file_mask
                 bits = txt_symbol & text_mask
                 bits >>= (8 - degree)
                 sample |= bits
@@ -112,16 +111,14 @@ class Center(tk.Frame):
         text = ''
         input_file.seek(HEADER_SIZE)
 
-        _, sample_mask = self.create_masks(degree)
-        sample_mask = ~sample_mask
-
-        # data = input_file.read(data_size)
+        _, file_mask = self.create_masks(degree)
+        file_mask = ~file_mask
 
         read = 0
         while read < symbols_to_read:
             symbol = 0
             for step in range(0, 8, degree):
-                sample = int.from_bytes(input_file.read(1), sys.byteorder) & sample_mask
+                sample = int.from_bytes(input_file.read(1), sys.byteorder) & file_mask
                 symbol <<= degree
                 symbol |= sample
 
@@ -139,14 +136,14 @@ class Center(tk.Frame):
 
     def create_masks(self, degree):
         text_mask = 0b11111111
-        img_mask = 0b11111111
+        file_mask = 0b11111111
 
         text_mask <<= (8 - degree)
         text_mask %= 256
-        img_mask >>= degree
-        img_mask <<= degree
+        file_mask >>= degree
+        file_mask <<= degree
 
-        return text_mask, img_mask
+        return text_mask, file_mask
 
 
 class OneSide(tk.Frame):
