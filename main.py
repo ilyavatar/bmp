@@ -204,9 +204,9 @@ class OneSide(tk.Frame):
 
 
 root = tk.Tk()
-left_side = OneSide(root, 'Загрузить изображение из файла', '', "Введите сообщение для кодирования")
+left_side = OneSide(root, 'Загрузить изображение из файла', None, "Введите сообщение для кодирования")
 center = Center(root)
-right_side = OneSide(root, 'Сохранить изображение в файл', '', 'Раскодированное сообщение', 'disabled')
+right_side = OneSide(root, 'Сохранить изображение в файл', None, 'Раскодированное сообщение', 'disabled')
 left_side.pack(side='left', padx=10)
 center.pack(side='left', padx=20)
 right_side.pack(side='left', padx=10)
